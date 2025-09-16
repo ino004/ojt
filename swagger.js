@@ -12,7 +12,7 @@ const options = {
     },
 servers: [
   {
-    url: "https://ojt00.onrender.com",
+    url: "https://ojt-fcxa.onrender.com",
     description: "Render server",
   },
   {
