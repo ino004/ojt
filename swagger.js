@@ -12,7 +12,7 @@ const options = {
     },
 servers: [
   {
-    url: "https://tansan-qgi2.onrender.com",
+    url: "https://ino-o930.onrender.com",
     description: "Render server",
   },
   {
