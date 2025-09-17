@@ -12,7 +12,7 @@ const options = {
     },
 servers: [
   {
-    url: "https://ojt-5fkp.onrender.com",
+    url: "https://tan00.onrender.com",
     description: "Render server",
   },
   {
