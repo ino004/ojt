@@ -6,7 +6,7 @@ const options = {
   definition: {
     openapi: "3.0.0",
     info: {
-      title: "Node.js + MongoDB API 🚀",
+      title: "Node.js MongoDB API",
       version: "1.0.0",
       description: "API documentation with Swagger UI",
     },
@@ -22,14 +22,15 @@ servers: [
 ],
 
     components: {
-      securitySchemes: {
-        bearerAuth: {
-          type: "http",
-          scheme: "bearer",
-          bearerFormat: "JWT", // để Swagger UI hiểu là token JWT
-        },
-      },
+  securitySchemes: {
+    bearerAuth: {
+      type: "http",
+      scheme: "bearer",
+      bearerFormat: "JWT", // để Swagger UI hiểu là token JWT
     },
+  },
+},
+
     security: [
       {
         bearerAuth: [],

@@ -1,7 +1,7 @@
 import mongoose from "mongoose";
 import connectDB from "../config/db.js";
-import roleModel from "./role.model.js";   // đúng vì cùng thư mục models
-import userModel from "./user.model.js";   // đúng vì cùng thư mục models
+import roleModel from "./role.model.js";  
+import userModel from "./user.model.js"; 
 
 // gọi connectDB() để kết nối
 connectDB().then(() => {

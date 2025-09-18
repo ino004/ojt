@@ -1,3 +1,4 @@
+
 import express from "express";
 import {
   allAccess,
@@ -9,10 +10,13 @@ import {
   createUser,
   updateUser,
   deleteUser,
-  restoreUser
+  restoreUser,
+  getMyProfile, 
+  updateMyProfile
 } from "../controllers/user.controller.js";
 import { authJwt } from "../middlewares/index.js";
-
+import { uploadAvatar } from "../middlewares/uploadAvatar.js";
+import { updateMyAvatar } from "../controllers/user.controller.js";
 const router = express.Router();
 
 /**
@@ -110,6 +114,86 @@ router.get("/admin", [authJwt.verifyToken, authJwt.isAdmin], adminBoard);
  *         description: Chỉ Admin mới được phép
  */
 router.get("/", [authJwt.verifyToken, authJwt.isAdmin], getAllUsers);
+
+/**
+ * @swagger
+ * /api/users/me:
+ *   get:
+ *     summary: Lấy hồ sơ của user
+ *     tags: [Profile]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200: { description: OK }
+ *       401: { description: Unauthorized }
+ */
+// ✅ chỉ cần token hợp lệ
+router.get("/me", authJwt.verifyToken, getMyProfile);
+/**
+ * @swagger
+ * /api/users/me:
+ *   put:
+ *     summary: Cập nhật hồ sơ của user (username hoặc mật khẩu)
+ *     tags: [Profile]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               username:
+ *                 type: string
+ *                 example: new_username
+ *               currentPassword:
+ *                 type: string
+ *                 format: password
+ *                 description: Bắt buộc nếu muốn đổi mật khẩu
+ *                 example: old_password
+ *               password:
+ *                 type: string
+ *                 format: password
+ *                 description: Mật khẩu mới (cần currentPassword đúng)
+ *                 example: new_secure_password
+ *     responses:
+ *       200:
+ *         description: Hồ sơ đã được cập nhật thành công
+ *       400:
+ *         description: Dữ liệu không hợp lệ hoặc mật khẩu cũ không chính xác
+ *       401:
+ *         description: Unauthorized
+ */
+router.put("/me", authJwt.verifyToken, updateMyProfile);
+
+/**
+ * @swagger
+ * /api/users/me/avatar:
+ *   patch:
+ *     summary: Cập nhật avatar của user (form-data)
+ *     tags: [Profile]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         multipart/form-data:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               avatar:
+ *                 type: string
+ *                 format: binary
+ *     responses:
+ *       200:
+ *         description: Cập nhật avatar thành công
+ *       400:
+ *         description: Thiếu file hoặc file không hợp lệ
+ *       401:
+ *         description: Unauthorized
+ */
+router.patch("/me/avatar", authJwt.verifyToken, uploadAvatar, updateMyAvatar);
 
 /**
  * @swagger
@@ -277,4 +361,6 @@ router.delete("/:id", [authJwt.verifyToken, authJwt.isAdmin], deleteUser);
  */
 router.put("/:id/restore", [authJwt.verifyToken, authJwt.isAdmin], restoreUser);
 
+
 export default router;
+
