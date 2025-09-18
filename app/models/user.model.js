@@ -21,8 +21,12 @@ const UserSchema = new mongoose.Schema({
   isDeleted: { type: Boolean, default: false },
 
   // ✅ Thêm avatarUrl
- avatar: { type: String, default: null },
-}, { _id: false, timestamps: true });
+  avatar: {
+    data: Buffer,
+    contentType: String,
+  },
+});
+
 
 UserSchema.plugin(AutoIncrement, { id: "user_seq", inc_field: "_id" });
 

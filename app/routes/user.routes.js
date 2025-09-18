@@ -12,7 +12,8 @@ import {
   deleteUser,
   restoreUser,
   getMyProfile, 
-  updateMyProfile
+  updateMyProfile,
+  getUserAvatar,
 } from "../controllers/user.controller.js";
 import { authJwt } from "../middlewares/index.js";
 import { uploadAvatar } from "../middlewares/uploadAvatar.js";
@@ -119,15 +120,34 @@ router.get("/", [authJwt.verifyToken, authJwt.isAdmin], getAllUsers);
  * @swagger
  * /api/users/me:
  *   get:
- *     summary: Lấy hồ sơ của user
+ *     summary: Lấy hồ sơ của user đang đăng nhập
  *     tags: [Profile]
  *     security:
  *       - bearerAuth: []
  *     responses:
- *       200: { description: OK }
- *       401: { description: Unauthorized }
+ *       200:
+ *         description: Thông tin hồ sơ user
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 _id:
+ *                   type: integer
+ *                 username:
+ *                   type: string
+ *                 email:
+ *                   type: string
+ *                 isVerified:
+ *                   type: boolean
+ *                 isDeleted:
+ *                   type: boolean
+ *                 avatarUrl:
+ *                   type: string
+ *                   example: http://localhost:3000/api/users/1/avatar
+ *       401:
+ *         description: Unauthorized
  */
-// ✅ chỉ cần token hợp lệ
 router.get("/me", authJwt.verifyToken, getMyProfile);
 /**
  * @swagger
@@ -194,6 +214,34 @@ router.put("/me", authJwt.verifyToken, updateMyProfile);
  *         description: Unauthorized
  */
 router.patch("/me/avatar", authJwt.verifyToken, uploadAvatar, updateMyAvatar);
+/**
+ * @swagger
+ * /api/users/{id}/avatar:
+ *   get:
+ *     summary: Lấy ảnh avatar của user
+ *     tags: [Profile]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: ID của user
+ *     responses:
+ *       200:
+ *         description: Ảnh avatar (binary data)
+ *         content:
+ *           image/jpeg: {}
+ *           image/png: {}
+ *           image/webp: {}
+ *       401:
+ *         description: Unauthorized
+ *       404:
+ *         description: Không có avatar
+ */
+router.get("/:id/avatar", authJwt.verifyToken, getUserAvatar);
 
 /**
  * @swagger

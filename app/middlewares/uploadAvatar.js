@@ -1,24 +1,16 @@
 // app/middlewares/uploadAvatar.js
 import multer from "multer";
-import path from "path";
-import fs from "fs";
 
-const AVATAR_DIR = "uploads/avatars";
+/**
+ * Dùng memoryStorage để lưu file trong RAM (req.file.buffer),
+ * controller sẽ lấy buffer này ghi thẳng vào MongoDB.
+ */
+const storage = multer.memoryStorage();
 
-// Đảm bảo thư mục tồn tại
-if (!fs.existsSync(AVATAR_DIR)) {
-  fs.mkdirSync(AVATAR_DIR, { recursive: true });
-}
-
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => cb(null, AVATAR_DIR),
-  filename: (req, file, cb) => {
-    const ext = path.extname(file.originalname).toLowerCase();
-    const name = `u_${req.userId}_${Date.now()}${ext}`;
-    cb(null, name);
-  },
-});
-
+/**
+ * Chỉ cho phép các định dạng ảnh phổ biến.
+ * (Tuỳ chọn: bạn có thể sniff vài byte đầu để cứng hơn)
+ */
 const fileFilter = (req, file, cb) => {
   const allowed = ["image/jpeg", "image/png", "image/webp", "image/jpg"];
   if (!allowed.includes(file.mimetype)) {
@@ -27,6 +19,10 @@ const fileFilter = (req, file, cb) => {
   cb(null, true);
 };
 
+/**
+ * Giới hạn size 2MB như cũ.
+ * Field upload là "avatar".
+ */
 export const uploadAvatar = multer({
   storage,
   fileFilter,

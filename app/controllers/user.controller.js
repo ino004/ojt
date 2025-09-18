@@ -1,6 +1,4 @@
 import bcrypt from "bcryptjs";
-import fs from "fs";
-import path from "path";
 import User from "../models/user.model.js";
 import Role from "../models/role.model.js";
 import transporter from "../config/mail.js";
@@ -25,18 +23,21 @@ export const moderatorBoard = (req, res) => {
 // 📍 Lấy tất cả user (chỉ lấy user chưa bị xóa)
 export const getAllUsers = async (req, res) => {
   try {
-    const users = await User.find({ isDeleted: false }).populate("roles", "name");
+    const users = await User.find({ isDeleted: false })
+      .select("-password -avatar")
+      .populate("roles", "name");
     res.status(200).json(users);
   } catch (err) {
     console.error("❌ [GET USERS] Error:", err);
     res.status(500).json({ message: err.message });
   }
 };
-
 // 📍 Lấy user theo ID (chỉ lấy nếu chưa bị xóa)
 export const getUserById = async (req, res) => {
   try {
-    const user = await User.findOne({ _id: req.params.id, isDeleted: false }).populate("roles", "name");
+    const user = await User.findOne({ _id: req.params.id, isDeleted: false })
+      .select("-password -avatar")
+      .populate("roles", "name");
     if (!user) return res.status(404).json({ message: "User không tồn tại hoặc đã bị xóa." });
     res.status(200).json(user);
   } catch (err) {
@@ -147,7 +148,7 @@ export const getMyProfile = async (req, res) => {
 
     const userObj = user.toObject();
     userObj.avatarUrl = buildAvatarUrl(req, userObj);
-
+delete userObj.avatar;
     res.json(userObj);
   } catch (err) {
     console.error("❌ [GET MY PROFILE] Error:", err);
@@ -209,9 +210,9 @@ export const updateMyProfile = async (req, res) => {
   }
 };
 
+
 export const updateMyAvatar = async (req, res) => {
   try {
-    // multer (uploadAvatar) sẽ gắn file vào req.file
     if (!req.file) {
       return res.status(400).json({ message: "Vui lòng chọn file avatar (field: avatar)." });
     }
@@ -221,37 +222,40 @@ export const updateMyAvatar = async (req, res) => {
       return res.status(404).json({ message: "Không tìm thấy user." });
     }
 
-    // Xoá file cũ nếu có (tuỳ bạn lưu ở field nào — ví dụ 'avatar')
-    if (me.avatar) {
-      const oldPath = path.join(process.cwd(), me.avatar.startsWith("uploads") ? me.avatar : me.avatar.replace(/^\//, ""));
-      if (fs.existsSync(oldPath)) {
-        try { fs.unlinkSync(oldPath); } catch (_) {}
-      }
-    }
+    // Lưu avatar trực tiếp vào MongoDB
+    me.avatar = {
+      data: req.file.buffer,
+      contentType: req.file.mimetype,
+    };
 
-    // Lưu đường dẫn mới (gợi ý lưu đường dẫn tương đối để serve static)
-    // uploadAvatar.js đã đặt thư mục uploads/avatars và tên file rồi
-const relativePath = `uploads/avatars/${req.file.filename}`; // luôn forward slash
-me.avatar = relativePath;
-await me.save();
+    await me.save();
 
-const baseUrl = `${req.protocol}://${req.get("host")}`;
-return res.status(200).json({
-  message: "Cập nhật avatar thành công!",
-  avatar: `/${relativePath}`,
-  avatarUrl: `${baseUrl}/${relativePath}`,
-});
+    res.status(200).json({ message: "Cập nhật avatar thành công!" });
   } catch (err) {
     console.error("❌ [UPDATE MY AVATAR] Error:", err);
-    return res.status(500).json({ message: err.message });
+    res.status(500).json({ message: err.message });
   }
 };
 
-function buildAvatarUrl(req, userObj) {
-  if (userObj?.avatar) {
-    const baseUrl = `${req.protocol}://${req.get("host")}`;
-    // Chuẩn hoá backslash nếu chạy Windows
-    return `${baseUrl}/${userObj.avatar.replace(/\\/g, "/")}`;
+export const getUserAvatar = async (req, res) => {
+  try {
+    const user = await User.findById(req.params.id).select("avatar");
+    if (!user || !user.avatar?.data) {
+      return res.status(404).send("Không có avatar.");
+    }
+
+    res.set("Content-Type", user.avatar.contentType || "application/octet-stream");
+    res.set("Cache-Control", "public, max-age=300");
+    return res.send(user.avatar.data);
+  } catch (err) {
+    console.error("❌ [GET USER AVATAR] Error:", err);
+    res.status(500).json({ message: err.message });
   }
-  return null; // có thể trả về default nếu muốn
+};
+function buildAvatarUrl(req, userObj) {
+  if (userObj?.avatar?.data) {
+    const baseUrl = `${req.protocol}://${req.get("host")}`;
+    return `${baseUrl}/api/users/${userObj._id}/avatar`;
+  }
+  return null;
 }
